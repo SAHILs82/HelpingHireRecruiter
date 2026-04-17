@@ -1,0 +1,5 @@
+In frontend development, whenever we identify something that will be reused multiple times, we convert it into a reusable component. This helps maintain consistency and reduces code duplication.
+
+In backend development, we handle logic and decision-making. For example, if an agent fails or an error occurs, the backend contains the logic to detect and handle that error, while the frontend is responsible only for displaying the appropriate UI message to the user.
+
+We also follow industry-standard project structures. Core business logic is typically placed in service layers, ensuring separation of concerns. For agent-based systems, structured outputs are defined using Pydantic schemas, which are maintained in a dedicated models folder and then used within agents for validation and consistency.

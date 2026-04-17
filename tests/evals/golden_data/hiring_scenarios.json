@@ -1,0 +1,9 @@
+{
+  "scenarios": [
+    {
+      "id": "scenario_1",
+      "jd_path": "path/to/jd.txt",
+      "cv_paths": ["path/to/cv1.pdf", "path/to/cv2.pdf"]
+    }
+  ]
+}

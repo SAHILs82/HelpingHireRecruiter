@@ -1,0 +1,19 @@
+[project]
+name = "project8-deep-agents-backend"
+version = "0.1.0"
+description = "AI Hiring Screener backend"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.116.0",
+  "uvicorn>=0.35.0",
+  "pydantic>=2.11.0",
+  "pydantic-settings>=2.10.0",
+  "langchain>=0.3.27",
+  "langgraph>=0.6.6",
+  "langsmith>=0.4.20",
+  "pymupdf>=1.26.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["app"]
+addopts = "-q"
