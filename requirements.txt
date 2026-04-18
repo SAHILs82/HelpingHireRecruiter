@@ -1,0 +1,14 @@
+fastapi>=0.116.0
+uvicorn>=0.35.0
+pydantic>=2.11.0
+pydantic-settings>=2.10.0
+langchain>=0.3.27
+langgraph>=0.6.6
+langsmith>=0.4.20
+pymupdf>=1.26.0
+sqlalchemy[asyncio]>=2.0.0
+asyncpg>=0.29.0
+alembic>=1.13.0
+psycopg[binary]>=3.1.0
+openai>=1.52.0
+tenacity>=8.3.0
