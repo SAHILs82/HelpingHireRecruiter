@@ -149,6 +149,38 @@ This document maps every gap, ranks them by impact, and gives you a concrete pha
 
 ---
 
+### Phase 1.1: Database Schema Expansion (Job Description)
+**Goal**: Update the initial Alembic migration and SQLAlchemy models to reflect the expanded storage requirements for the JD Parsing pipeline. The table will be renamed to `job_description` to better reflect its purpose, and it will capture all extracted metadata, confidence scores, and raw LLM outputs.
+
+## Proposed Changes
+
+### Database Layer
+- **[MODIFY]** `backend/alembic/versions/0001_create_jobs_table.py`
+  - Change table name from `jobs` to `job_description`
+  - Rename `rubric` column to `structured_output`
+  - Add new columns:
+    - `experience_level` (`Float`): Extracted years of experience.
+    - `company_name` (`String`): Name of the hiring company.
+    - `location` (`String`): Job location.
+    - `employment_type` (`String`): Full-time, Contract, etc.
+    - `salary_range` (`Float`): Extracted compensation float.
+    - `source` (`String`): Where the JD was scraped/uploaded from.
+    - `parsed_at` (`DateTime`): Timestamp when the LLM finished parsing.
+    - `error_message` (`Text`): To store any errors during the parsing agent execution.
+    - `confidence_score` (`Float`): LLM's confidence in the extracted data.
+    - `raw_output` (`JSONB`): A raw key-value store for unstructured/extra data from the LLM.
+
+- **[MODIFY]** `backend/app/db/models.py`
+  - Rename class `Job` to `JobDescription`
+  - Update `__tablename__ = "job_description"`
+  - Map all the new columns listed above to SQLAlchemy `Mapped` properties.
+
+## Open Questions
+- Is `experience_level` intended to be a strictly Float value (e.g., `5.0` for 5 years)? If a JD requires "3-5 years", do we want to store the minimum (`3.0`) or keep it as a String instead?
+- What should be the default state of `raw_output`? A default empty dictionary `{}`?
+
+---
+
 ### Phase 2: Real RAG System (Days 4-6)
 **Goal**: Replace proxy scores with real vector embeddings, BM25, and cross-encoder reranking.
 

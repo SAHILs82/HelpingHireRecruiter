@@ -12,6 +12,7 @@ Turn three placeholder implementations into **real LLM-backed agents** that retu
 | Agent | Module | Function | Output model |
 |-------|--------|----------|--------------|
 | JD Parser | `backend/app/agents/jd_parser_agent.py` | `parse_jd_to_rubric(jd_text, role_title, level)` | `JDRubric` |
+| CV Parser | `backend/app/agents/cv_parser_agent.py` | `parse_cv_to_structured_data(cv_text)` | `ParsedCV` |
 | CV Scorer | `backend/app/agents/cv_scoring_agent.py` | `score_candidate(candidate, rubric)` | `CandidateScore` |
 | Skill Gap | `backend/app/agents/skill_gap_agent.py` | `infer_skill_gaps(...)` | `SkillGapReport` |
 
@@ -50,17 +51,20 @@ flowchart TB
   JD --> JDParser[jd_parser_agent parse_jd_to_rubric]
   JDParser --> RUBRIC[JDRubric]
 
+  CAND --> CVParser[cv_parser_agent parse_cv_to_structured_data]
+  CVParser --> PARSED_CV[ParsedCV]
+
   RUBRIC --> EvQuery[retrieve_candidate_evidence]
-  CAND --> EvQuery
+  PARSED_CV --> EvQuery
   EvQuery --> EVD[EvidenceSpan list]
 
-  RUBRIC --> CVScore[cv_scoring_agent score_candidate]
-  CAND --> CVScore
+  RUBRIC --> CVScore[cv_scoring_agent score_candidate - Preference Match]
+  PARSED_CV --> CVScore
   EVD --> CVScore
   CVScore --> SCORE[CandidateScore]
 
   RUBRIC --> GAP[skill_gap_agent infer_skill_gaps]
-  CAND --> GAP
+  PARSED_CV --> GAP
   SCORE --> GAP
   GAP --> GAPS[SkillGapReport]
 ```
@@ -111,13 +115,27 @@ Optional: `build_user_prompt(**kwargs) -> str` to centralize formatting.
 
 ### 5.1 `prompts/jd_parser.py` → `JDRubric`
 
-**Goal:** Convert unstructured JD text into a structured rubric.
+**Goal:** Convert unstructured JD text into a structured rubric of recruiter preferences.
 
 **Template variables:** `jd_text`, `role_title`, `level`.
 
-**Prompt techniques:**
+---
 
-- Few-shot: 1–2 short examples (JD excerpt → JSON rubric matching the schema).
+### 5.2 `prompts/cv_parser.py` → `ParsedCV`
+
+**Goal:** Extract full structured profile from candidate's raw CV text.
+
+**Template variables:** `cv_text`.
+
+**Prompt techniques:**
+- Comprehensive extraction: Education history, Professional experience with bullet points, Tech stack, and Contact details.
+- Output format: Strictly formatted JSON/YAML matching the `ParsedCV` schema.
+
+---
+
+### 5.3 `prompts/cv_scorer.py` → `CandidateScore`
+
+**Goal:** Perform "Preference Matching" by scoring the candidate against the rubric.
 - Instruct: must-have vs nice-to-have, realistic `SkillRequirement.weight` in `[0, 1]`, `mandatory` flags, `experience_years_min`, `behavioral_signals`, optional `education_preferences`, keep `weighting` defaults or set explicitly if the model can fill them consistently.
 
 **Post-processing (in agent or helper):**
@@ -177,6 +195,14 @@ When `score` is provided, include `strengths`, `weaknesses`, and `reasoning_summ
 ---
 
 ## 6. Step C — Agent implementation
+
+### 6.0 CV Parser Agent (`cv_parser_agent.py`)
+
+**Goal:** Extract structured data to be used as source of truth for all matching logic.
+
+1. Build prompts from `prompts/cv_parser.py`.
+2. Call `LLMClient.generate_structured(..., output_schema=ParsedCV)`.
+3. Handle: Missing fields or poor text extraction from PDF.
 
 ### 6.1 JD Parser Agent (`jd_parser_agent.py`)
 
