@@ -120,8 +120,13 @@ OUTPUT_SCHEMA = SomePydanticModel  # Expected output structure
   - Output: `JDRubric` (must_have_skills, nice_to_have_skills, experience_years, behavioral_signals)
   - Key prompt technique: **Few-shot examples** of JD → rubric conversion
 
-- [ ] **`prompts/cv_scorer.py`** — Score candidate CV against rubric
-  - Input: `{rubric_json}`, `{cv_text}`, `{evidence_chunks}`
+- [ ] **`prompts/cv_parser.py`** — Extract all structured information from candidate side
+  - Input: `{cv_text}`
+  - Output: `ParsedCV` (full profile extraction including education, experience, and contact)
+  - Key prompt technique: **Entity extraction** with strictly defined YAML/JSON output
+
+- [ ] **`prompts/cv_scorer.py`** — Preference matching: score candidate CV against recruiter preferences
+  - Input: `{rubric_json}`, `{cv_text}` or `{parsed_cv_json}`, `{evidence_chunks}`
   - Output: `CandidateScore` (overall_score, per_skill_scores, evidence_citations, confidence)
   - Key prompt technique: **Chain-of-thought** ("Think step by step...")
 
@@ -172,8 +177,13 @@ OUTPUT_SCHEMA = SomePydanticModel  # Expected output structure
   - Remove all hardcoded `SkillRequirement` lists
   - Handle: what if LLM returns malformed JSON? → retry or fallback to basic rubric
 
+- [ ] **`agents/cv_parser_agent.py`** → `parse_cv_to_structured_data(cv_text)`
+  - Call LLM to extract full biographical and professional details
+  - Ensure all dates, roles, and skills are extracted cleanly
+  - Returns `ParsedCV` object
+
 - [ ] **`agents/cv_scoring_agent.py`** → `score_candidate(candidate, rubric)`
-  - Call LLM with CV text + rubric JSON
+  - Call LLM with CV text/parsed data + recruiter preferences (rubric)
   - Ensure `evidence_citations` point to real CV text spans
   - Include `confidence` score (0.0 - 1.0) in output
 
