@@ -1,0 +1,11 @@
+# Define constants for robust typing
+LLM_USE_CASE_JD_PARSER = "jd_parser"
+LLM_USE_CASE_CV_PARSER = "cv_parser"
+LLM_USE_CASE_CV_SCORER = "cv_scorer"
+LLM_USE_CASE_BIAS_DETECTOR = "bias_detector"
+LLM_USE_CASE_SKILL_GAP = "skill_gap"
+LLM_USE_CASE_ADAPTIVE_SCORER = "adaptive_scorer"
+LLM_USE_CASE_DEBATE_SUPPORTER = "debate_supporter"
+LLM_USE_CASE_DEBATE_CRITIC = "debate_critic"
+LLM_USE_CASE_DECISION_MAKER = "decision_maker"
+LLM_USE_CASE_INTERVIEW_GEN = "interview_gen"
