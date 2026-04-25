@@ -1,5 +1,6 @@
 # Define constants for robust typing
 LLM_USE_CASE_JD_PARSER = "jd_parser"
+LLM_USE_CASE_JD_GENERATOR = "jd_generator"
 LLM_USE_CASE_CV_PARSER = "cv_parser"
 LLM_USE_CASE_CV_SCORER = "cv_scorer"
 LLM_USE_CASE_BIAS_DETECTOR = "bias_detector"
