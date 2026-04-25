@@ -14,8 +14,8 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool
 
-from app.schemas.agent_jd_intake import AgentJDIntake
-from app.schemas.job_description import JDGeneratorResponse
+from app.ai.schema.agent_jd_intake import AgentJDIntake
+from app.ai.schema.job_description import JDGeneratorResponse
 from app.core.config import settings
 from app.ai.services.jd_generator_service import (
     prepare_jd_generator_prompts,

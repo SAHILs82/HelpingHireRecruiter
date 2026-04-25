@@ -11,11 +11,11 @@ import re
 from datetime import datetime, UTC
 from uuid import UUID
 
-from app.schemas.agent_jd_intake import AgentJDIntake
-from app.schemas.job_description import JDGeneratorResponse
+from app.ai.schema.agent_jd_intake import AgentJDIntake
+from app.ai.schema.job_description import JDGeneratorResponse
 from app.services.ai.llm_prompt_repository import load_active_prompt_map, resolve_full_prompt
 from app.core.llm_prompt_keys import LLM_USE_CASE_JD_GENERATOR
-from app.prompts.jd_generator import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
+from app.ai.prompts.jd_generator import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
 from app.db.session import SessionLocal
 from app.db.models.jd_intake import JDIntake
 from app.db.models.job_description import JobDescription
