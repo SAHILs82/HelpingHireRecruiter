@@ -1,20 +1,41 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from typing import Any, Dict, List
 
 from fastapi import FastAPI
 
 from app.api.schemas import ScreeningRequest
 from app.core.config import settings
-from app.models.schemas import CandidateProfile
+from app.db.session import dispose_async_engine
+from app.schemas import CandidateProfile
 from app.services.graph_runner import run_hiring_graph
 from app.utils.logging import request_logging_middleware
 from app.utils.tracing import setup_langsmith_tracing
 
-app = FastAPI(title=settings.app_name)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    await dispose_async_engine()
+
+
+from fastapi.middleware.cors import CORSMiddleware
+from app.api.jd_intake import router as jd_intake_router
+
+app = FastAPI(title=settings.app_name, lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.middleware("http")(request_logging_middleware)
 app.state.langsmith_enabled = setup_langsmith_tracing()
 
+app.include_router(jd_intake_router, prefix="/api/jd/intake", tags=["JD Intake"])
 
 @app.get("/health")
 async def health() -> Dict[str, str]:

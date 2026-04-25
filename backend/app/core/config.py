@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     langsmith_api_key: str | None = Field(default=None, alias="LANGSMITH_API_KEY")
     langsmith_project: str = Field(default="project8-deep-agents", alias="LANGSMITH_PROJECT")
     langsmith_endpoint: str = Field(default="https://api.smith.langchain.com", alias="LANGSMITH_ENDPOINT")
-    langsmith_tracing_enabled: bool = Field(default=False, alias="LANGSMITH_TRACING")
+    langsmith_tracing_enabled: bool = Field(default=True, alias="LANGSMITH_TRACING")
 
     @property
     def resolved_api_key(self) -> str | None:

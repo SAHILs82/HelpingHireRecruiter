@@ -3,6 +3,7 @@ uvicorn>=0.35.0
 pydantic>=2.11.0
 pydantic-settings>=2.10.0
 langchain>=0.3.27
+langchain-openai>=0.3.11
 langgraph>=0.6.6
 langsmith>=0.4.20
 pymupdf>=1.26.0
