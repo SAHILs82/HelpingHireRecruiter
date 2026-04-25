@@ -8,12 +8,16 @@ Flow:  Frontend form → JDIntake (saved) → Agent reads it → JobDescription 
 """
 import uuid
 from datetime import datetime
+from typing import List, TYPE_CHECKING
 
 from sqlalchemy import DateTime, Float, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.db.models.job_description import JobDescription
 
 
 class JDIntake(Base):
@@ -38,10 +42,6 @@ class JDIntake(Base):
     salary_max: Mapped[float | None] = mapped_column(
         Float, nullable=True,
         comment="Upper bound of salary range (in local currency)",
-    )
-    salary_currency: Mapped[str | None] = mapped_column(
-        String(10), nullable=True, default="INR",
-        comment="Currency code, e.g. INR, USD, EUR",
     )
     experience_min: Mapped[float | None] = mapped_column(
         Float, nullable=True,
@@ -90,3 +90,8 @@ class JDIntake(Base):
             f"<JDIntake id={self.id} company={self.company_name!r} "
             f"domain={self.domain!r}>"
         )
+
+    # Relationship to generated job descriptions
+    job_descriptions: Mapped[List["JobDescription"]] = relationship(
+        "JobDescription", back_populates="intake"
+    )

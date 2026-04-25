@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.models.schemas import BiasReport, CandidateProfile, CandidateScore
+from app.schemas import BiasReport, CandidateProfile, CandidateScore
 
 
 def detect_bias(candidate: CandidateProfile, score: CandidateScore) -> BiasReport:

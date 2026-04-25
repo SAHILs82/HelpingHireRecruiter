@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.models.schemas import CandidateProfile, CandidateScore, JDRubric
+from app.schemas import CandidateProfile, CandidateScore, JDRubric
 from app.services.evidence_service import retrieve_candidate_evidence
 
 

@@ -10,7 +10,7 @@ from app.agents.decision_agent import decide_candidate
 from app.agents.interview_question_agent import generate_interview_questions
 from app.agents.jd_parser_agent import parse_jd_to_rubric
 from app.agents.skill_gap_agent import infer_skill_gaps
-from app.models.state import HiringState
+from app.state.state import HiringState
 
 
 def jd_parser_node(state: HiringState) -> HiringState:

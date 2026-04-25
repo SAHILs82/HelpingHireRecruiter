@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.models.schemas import CandidateScore, DecisionLabel, FinalDecision, SkillGapReport
+from app.schemas import CandidateScore, DecisionLabel, FinalDecision, SkillGapReport
 
 
 def decide_candidate(score: CandidateScore, skill_gap: SkillGapReport) -> FinalDecision:
