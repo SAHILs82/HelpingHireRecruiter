@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import './App.css'
+import JDGeneratorForm from './components/JDGeneratorForm'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -185,6 +186,8 @@ function App() {
                   </article>
                 ))}
               </section>
+
+              <JDGeneratorForm onSubmit={(data) => console.log("Intake saved:", data)} />
 
               <section className="panel-grid">
                 <article className="panel">
