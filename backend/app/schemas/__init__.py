@@ -1,4 +1,4 @@
-from app.ai.schema.job_description import *
+from app.ai.schema.agent_job_description import *
 from app.schemas.jd_intake import *
 from app.ai.schema.agent_jd_intake import *
 from app.schemas.jd_parser import *

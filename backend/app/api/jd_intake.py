@@ -9,7 +9,7 @@ from sqlalchemy.future import select
 from app.db.models.jd_intake import JDIntake
 from app.db.session import get_session
 from app.schemas.jd_intake import JDIntakeCreate, JDIntakeUpdate, JDIntakeResponse
-from app.agents.jd_generator_agent import generate_job_description
+from app.ai.agents.jd_generator_agent import generate_job_description
 
 router = APIRouter()
 
@@ -94,8 +94,8 @@ async def trigger_jd_generation(
         )
 
     # 2. Trigger the TRUE agentic flow
-    from app.agents.jd_generator_agent import generate_job_description
-    from app.services.ai.jd_generator_service import fetch_intake_from_db, store_generated_jd
+    from app.ai.agents.jd_generator_agent import generate_job_description
+    from app.ai.services.jd_generator_service import fetch_intake_from_db, store_generated_jd
     
     try:
         # Step A: Fetch the intake object from DB formatted specifically for the AI agent
@@ -119,3 +119,26 @@ async def trigger_jd_generation(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Agent pipeline failed: {str(e)}"
         )
+
+
+@router.delete("/{intake_id}", status_code=status.HTTP_200_OK)
+async def delete_jd_intake(
+    intake_id: uuid.UUID,
+    db: AsyncSession = Depends(get_session)
+) -> Any:
+    """
+    Delete an existing JD intake form from the database.
+    """
+    result = await db.execute(select(JDIntake).filter(JDIntake.id == intake_id))
+    intake = result.scalars().first()
+    
+    if not intake:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="JD Intake not found"
+        )
+        
+    await db.delete(intake)
+    await db.commit()
+    
+    return {"status": "deleted", "id": str(intake_id)}
