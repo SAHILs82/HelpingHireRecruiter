@@ -57,3 +57,4 @@ chroma_db/
 faiss_index/
 logs/
 *.log
+Playground/

@@ -1,11 +1,17 @@
 import uuid
 from datetime import datetime
 
+from typing import List, TYPE_CHECKING
+
 from sqlalchemy import DateTime, String, Text, func, JSON
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.db.models.cv_score import CVScore
+    from app.db.models.bias_report import BiasReportRecord
 
 
 class Candidate(Base):
@@ -48,3 +54,6 @@ class Candidate(Base):
         onupdate=func.now(),
         nullable=False,
     )
+
+    cv_scores: Mapped[List["CVScore"]] = relationship("CVScore", back_populates="candidate")
+    bias_reports: Mapped[list["BiasReportRecord"]] = relationship("BiasReportRecord", back_populates="candidate", cascade="all, delete")
