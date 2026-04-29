@@ -160,7 +160,8 @@ set -a && source .env && set +a && alembic upgrade head
 
 ```bash
 uvicorn app.main:app --reload
-```
+```source .venv/bin/activate
+
 
 - **`uvicorn`**: ASGI server that runs FastAPI.
 - **`app.main:app`**: module `app.main`, variable `app` (the `FastAPI()` instance).

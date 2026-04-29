@@ -69,7 +69,8 @@ class JDIntakeCreate(BaseModel):
         description="Free-text description of the role written by the recruiter.",
     )
 
-
+# to get the data here we can use this here and for the delete we dont need any thing in the api route here
+# we will go to the end point here and then make a db query here and just return the status here 
 class JDIntakeUpdate(BaseModel):
     """Schema for updating an existing JD Intake draft. All fields optional."""
     company_name: Optional[str] = None

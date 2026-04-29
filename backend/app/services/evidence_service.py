@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List
 
-from app.models.schemas import EvidenceSpan
+from app.schemas import EvidenceSpan
 from app.retrieval.chunking import expand_query_terms, section_aware_chunk_cv
 from app.retrieval.hybrid import HybridRetriever
 from app.retrieval.reranker import PassageReranker
