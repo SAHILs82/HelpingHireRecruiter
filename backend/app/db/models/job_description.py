@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from app.db.models.cv_score import CVScore
     from app.db.models.bias_report import BiasReportRecord
     from app.db.models.jd_intake import JDIntake
+    from app.db.models.candidate_application import CandidateApplication
 
 
 class JobDescription(Base):
@@ -58,3 +59,4 @@ class JobDescription(Base):
     cv_scores: Mapped[List["CVScore"]] = relationship("CVScore", back_populates="job")
     bias_reports: Mapped[list["BiasReportRecord"]] = relationship("BiasReportRecord", back_populates="job", cascade="all, delete")
     intake: Mapped["JDIntake | None"] = relationship("JDIntake", back_populates="job_descriptions")
+    applications: Mapped[list["CandidateApplication"]] = relationship("CandidateApplication", back_populates="job", cascade="all, delete")

@@ -4,6 +4,7 @@ from app.db.models.cv_score import CVScore
 from app.db.models.bias_report import BiasReportRecord
 from app.db.models.dynamic_llm_prompts import DynamicLLMPrompt
 from app.db.models.jd_intake import JDIntake
+from app.db.models.candidate_application import CandidateApplication
 
-__all__ = ["JobDescription", "Candidate", "CVScore", "BiasReportRecord", "DynamicLLMPrompt", "JDIntake"]
+__all__ = ["JobDescription", "Candidate", "CVScore", "BiasReportRecord", "DynamicLLMPrompt", "JDIntake", "CandidateApplication"]
 

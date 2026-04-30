@@ -26,6 +26,7 @@ async def lifespan(app: FastAPI):
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.jd_intake import router as jd_intake_router
 from app.api.cv_parsing import router as cv_parsing_router
+from app.api.candidate_application import router as candidate_application_router
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
 app.add_middleware(
@@ -41,6 +42,7 @@ app.state.langsmith_enabled = TRACING_ENABLED
 
 app.include_router(jd_intake_router, prefix="/api/jd/intake", tags=["JD Intake"])
 app.include_router(cv_parsing_router, prefix="/api/cv-parsing", tags=["CV Parsing"])
+app.include_router(candidate_application_router, prefix="/api/applications", tags=["Candidate Applications"])
 
 @app.get("/health")
 async def health() -> Dict[str, str]:
