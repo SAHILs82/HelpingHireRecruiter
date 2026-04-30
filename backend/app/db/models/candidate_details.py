@@ -12,6 +12,7 @@ from app.db.base import Base
 if TYPE_CHECKING:
     from app.db.models.cv_score import CVScore
     from app.db.models.bias_report import BiasReportRecord
+    from app.db.models.candidate_application import CandidateApplication
 
 
 class Candidate(Base):
@@ -57,3 +58,4 @@ class Candidate(Base):
 
     cv_scores: Mapped[List["CVScore"]] = relationship("CVScore", back_populates="candidate")
     bias_reports: Mapped[list["BiasReportRecord"]] = relationship("BiasReportRecord", back_populates="candidate", cascade="all, delete")
+    applications: Mapped[list["CandidateApplication"]] = relationship("CandidateApplication", back_populates="candidate", cascade="all, delete")
