@@ -1,5 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createJDIntake, updateJDIntake } from './api/jdIntakeAPI';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './ui/card';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
+import { Button } from './ui/button';
+import { Loader2 } from 'lucide-react';
 
 const ROLE_TYPES = [
   { value: 'full-time', label: 'Full-time' },
@@ -30,31 +36,40 @@ const DEFAULT_FORM_STATE = {
   description: ''
 };
 
-export default function JDGeneratorForm({ onSubmit }) {
-  const [isEditing, setIsEditing] = useState(true);
+export default function JDGeneratorForm({ initialData, onSaved }) {
   const [formData, setFormData] = useState(DEFAULT_FORM_STATE);
   const [intakeId, setIntakeId] = useState(null);
-  const [localLoading, setLocalLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        company_name: initialData.company_name || '',
+        salary_min: initialData.salary_min || '',
+        salary_max: initialData.salary_max || '',
+        experience_min: initialData.experience_min || '',
+        experience_max: initialData.experience_max || '',
+        domain: initialData.domain || '',
+        role_type: initialData.role_type || 'full-time',
+        preferred_education: initialData.preferred_education || 'bachelors',
+        location: initialData.location || '',
+        description: initialData.description || ''
+      });
+      setIntakeId(initialData.id);
+    }
+  }, [initialData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleReset = () => {
-    setFormData(DEFAULT_FORM_STATE);
-    setIntakeId(null);
-    setIsEditing(true);
-    setError(null);
-  };
-
   const handleSave = async (e) => {
     e.preventDefault();
-    setLocalLoading(true);
+    setLoading(true);
     setError(null);
 
-    // Convert numeric fields from string to Number before sending
     const payload = {
       ...formData,
       salary_min: formData.salary_min ? Number(formData.salary_min) : null,
@@ -66,160 +81,98 @@ export default function JDGeneratorForm({ onSubmit }) {
     try {
       let result;
       if (intakeId) {
-        // Update existing
         result = await updateJDIntake(intakeId, payload);
       } else {
-        // Create new
         result = await createJDIntake(payload);
-        if (result.id) {
-          setIntakeId(result.id);
-        }
       }
       
-      setIsEditing(false);
-      
-      if (onSubmit) {
-        onSubmit(result);
+      if (onSaved) {
+        onSaved(result);
       }
     } catch (err) {
       console.error("Failed to save intake:", err);
       setError(err.message || "Failed to save data. Please try again.");
     } finally {
-      setLocalLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <article className="panel" style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2>Create a Job Description</h2>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button style={{ backgroundColor: '#4b5563', color: 'white' }} onClick={handleReset}>Create New Job Intake</button>
-          {!isEditing && (
-            <button onClick={() => setIsEditing(true)}>Edit Draft</button>
-          )}
-        </div>
-      </div>
-      
-      <p>Fill out the basic details to save an intake form.</p>
-
-      {isEditing ? (
-        <form onSubmit={handleSave} style={{ marginTop: '14px' }}>
-          
-          <div className="panel-grid">
-            <label>
-              Company Name
-              <input 
-                type="text" name="company_name" 
-                value={formData.company_name} onChange={handleChange} 
-                placeholder="e.g. Acme Corp" 
-              />
-            </label>
-            <label>
-              Location
-              <input 
-                type="text" name="location" 
-                value={formData.location} onChange={handleChange} 
-                placeholder="e.g. Bangalore, India or Remote" 
-              />
-            </label>
-          </div>
-
-          <div className="panel-grid">
-            <label>
-              Domain / Industry
-              <input 
-                type="text" name="domain" 
-                value={formData.domain} onChange={handleChange} 
-                placeholder="e.g. Engineering, Marketing, Data..." 
-              />
-            </label>
-            <label>
-              Role Type
-              <select name="role_type" value={formData.role_type} onChange={handleChange}>
+    <Card className="max-w-4xl mx-auto shadow-sm">
+      <CardHeader>
+        <CardTitle>{intakeId ? 'Edit Draft' : 'Basic Details'}</CardTitle>
+        <CardDescription>Fill out the role constraints to guide the AI generation process.</CardDescription>
+      </CardHeader>
+      <form onSubmit={handleSave}>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label>Company Name</Label>
+              <Input type="text" name="company_name" value={formData.company_name} onChange={handleChange} placeholder="e.g. Acme Corp" />
+            </div>
+            <div className="space-y-2">
+              <Label>Location</Label>
+              <Input type="text" name="location" value={formData.location} onChange={handleChange} placeholder="e.g. Bangalore, India or Remote" />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Domain / Industry</Label>
+              <Input type="text" name="domain" value={formData.domain} onChange={handleChange} placeholder="e.g. Engineering, Marketing..." />
+            </div>
+            <div className="space-y-2">
+              <Label>Role Type</Label>
+              <select name="role_type" value={formData.role_type} onChange={handleChange} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                 {ROLE_TYPES.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
               </select>
-            </label>
-          </div>
+            </div>
 
-          <div className="panel-grid">
-            <label>
-              Salary Range (INR)
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <input 
-                  type="number" name="salary_min" 
-                  value={formData.salary_min} onChange={handleChange} 
-                  placeholder="Min" min="0" style={{ width: '100%' }}
-                />
-                <span>-</span>
-                <input 
-                  type="number" name="salary_max" 
-                  value={formData.salary_max} onChange={handleChange} 
-                  placeholder="Max" min="0" style={{ width: '100%' }}
-                />
+            <div className="space-y-2">
+              <Label>Salary Range (INR)</Label>
+              <div className="flex gap-2 items-center">
+                <Input type="number" name="salary_min" value={formData.salary_min} onChange={handleChange} placeholder="Min" min="0" />
+                <span className="text-muted-foreground">-</span>
+                <Input type="number" name="salary_max" value={formData.salary_max} onChange={handleChange} placeholder="Max" min="0" />
               </div>
-            </label>
-            <label>
-              Experience Range (Years)
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <input 
-                  type="number" name="experience_min" 
-                  value={formData.experience_min} onChange={handleChange} 
-                  placeholder="Min" min="0" max="30" style={{ width: '100%' }}
-                />
-                <span>-</span>
-                <input 
-                  type="number" name="experience_max" 
-                  value={formData.experience_max} onChange={handleChange} 
-                  placeholder="Max" min="0" max="30" style={{ width: '100%' }}
-                />
+            </div>
+            <div className="space-y-2">
+              <Label>Experience Range (Years)</Label>
+              <div className="flex gap-2 items-center">
+                <Input type="number" name="experience_min" value={formData.experience_min} onChange={handleChange} placeholder="Min" min="0" max="30" />
+                <span className="text-muted-foreground">-</span>
+                <Input type="number" name="experience_max" value={formData.experience_max} onChange={handleChange} placeholder="Max" min="0" max="30" />
               </div>
-            </label>
-          </div>
+            </div>
 
-          <div className="panel-grid" style={{ gridTemplateColumns: '1fr' }}>
-             <label>
-              Preferred Education
-              <select name="preferred_education" value={formData.preferred_education} onChange={handleChange}>
+            <div className="space-y-2 md:col-span-2">
+              <Label>Preferred Education</Label>
+              <select name="preferred_education" value={formData.preferred_education} onChange={handleChange} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                 {EDU_LEVELS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
               </select>
-            </label>
+            </div>
           </div>
 
-          <label>
-            Job Description / Context <span style={{color: '#b91c1c'}}>*</span>
-            <span className="hint">Describe what the person will do, key skills needed, and the team context. (Min 20 characters)</span>
-            <textarea 
+          <div className="space-y-2">
+            <div className="flex justify-between items-baseline">
+              <Label>Job Context & Description <span className="text-destructive">*</span></Label>
+              <span className="text-xs text-muted-foreground">Min 20 chars</span>
+            </div>
+            <Textarea 
               name="description" required minLength={20}
               value={formData.description} onChange={handleChange} 
-              rows={5}
-              placeholder="We are looking for a backend engineer to join our core payments team..." 
+              rows={6}
+              placeholder="We are looking for a backend engineer to join our core payments team. They will work primarily with Python and AWS..." 
+              className="resize-y"
             />
-          </label>
-
-          {error && <p className="error" style={{ marginBottom: '10px' }}>{error}</p>}
-
-          <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-            <button type="submit" disabled={localLoading} style={{ background: '#1d4ed8', width: '100%' }}>
-              {localLoading ? 'Saving...' : (intakeId ? 'Update Draft' : 'Save Draft')}
-            </button>
           </div>
-        </form>
-      ) : (
-        <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', padding: '16px', borderRadius: '8px', marginTop: '14px' }}>
-          <h4>Review your inputs</h4>
-          <p><strong>Company:</strong> {formData.company_name || 'N/A'}</p>
-          <p><strong>Location:</strong> {formData.location || 'N/A'}</p>
-          <p><strong>Salary (INR):</strong> {formData.salary_min} - {formData.salary_max}</p>
-          <p><strong>Experience:</strong> {formData.experience_min} - {formData.experience_max} years</p>
-          <p><strong>Role Type:</strong> {formData.role_type}</p>
-          <div style={{ marginTop: '10px' }}>
-            <strong>Description:</strong>
-            <p style={{ whiteSpace: 'pre-wrap', color: '#4b5563', fontSize: '14px' }}>{formData.description}</p>
-          </div>
-          <button style={{ marginTop: '14px' }} onClick={() => setIsEditing(true)}>Edit Details</button>
-        </div>
-      )}
-    </article>
+
+          {error && <p className="text-sm font-medium text-destructive">{error}</p>}
+        </CardContent>
+        <CardFooter className="bg-muted/50 py-4 flex justify-end gap-3 border-t">
+          <Button type="submit" disabled={loading} className="w-full sm:w-auto">
+            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : (intakeId ? 'Update Draft' : 'Save Draft')}
+          </Button>
+        </CardFooter>
+      </form>
+    </Card>
   );
 }

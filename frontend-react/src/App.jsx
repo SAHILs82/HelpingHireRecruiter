@@ -1,261 +1,176 @@
-import { useMemo, useState } from 'react'
-import './App.css'
-import JDGeneratorForm from './components/JDGeneratorForm'
+import { useState, useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import AppLayout from './layouts/AppLayout'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+// Pages
+// import DashboardPage from './pages/DashboardPage'
+import JDIntakePage from './pages/JDIntakePage'
+// import JDIntakeDetailPage from './pages/JDIntakeDetailPage'
+import JobListingPage from './pages/JobListingPage'
+import JobDescriptionPage from './pages/JobDescriptionPage'
+import CandidatesPage from './pages/CandidatesPage'
+import CandidateProfilePage from './pages/CandidateProfilePage'
+import ScoringLeaderboardPage from './pages/ScoringLeaderboardPage'
+import ScoreDetailPage from './pages/ScoreDetailPage'
 
-const sampleCandidates = [
-  {
-    candidate_id: 'c1',
-    name: 'Aman Verma',
-    email: 'aman@example.com',
-    declared_skills: ['Python', 'FastAPI', 'LangChain'],
-    cv_text:
-      'Experience\nBuilt FastAPI and LangChain RAG systems for hiring workflows.\nSkills\nPython FastAPI LangChain RAG',
-  },
-  {
-    candidate_id: 'c2',
-    name: 'Sana Patel',
-    email: 'sana@example.com',
-    declared_skills: ['Python', 'Django', 'Postgres'],
-    cv_text:
-      'Experience\nBuilt backend systems and data APIs.\nSkills\nPython Django SQL',
-  },
-]
+// Auth Components
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './components/ui/card'
+import { Input } from './components/ui/input'
+import { Label } from './components/ui/label'
+import { Button } from './components/ui/button'
 
-function App() {
+function LoginPage({ onLogin }) {
+// ... existing Login component
   const [authMode, setAuthMode] = useState('login')
   const [role, setRole] = useState('recruiter')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+
+  const submitAuth = (e) => {
+    e.preventDefault()
+    if (!email || !password) return
+    const newUser = { email, role }
+    localStorage.setItem('project8User', JSON.stringify(newUser))
+    onLogin(newUser)
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader className="text-center space-y-2">
+          <div className="mx-auto w-12 h-12 rounded-lg bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mb-2">
+            HH
+          </div>
+          <CardTitle className="text-2xl font-bold">HelpingHire AI</CardTitle>
+          <CardDescription>
+            Deep-agent hiring with recruiter and job seeker workflows
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-2 mb-6 p-1 bg-muted rounded-lg">
+            <button
+              type="button"
+              className={`py-1.5 px-3 text-sm font-medium rounded-md transition-all ${authMode === 'login' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setAuthMode('login')}
+            >
+              Login
+            </button>
+            <button
+              type="button"
+              className={`py-1.5 px-3 text-sm font-medium rounded-md transition-all ${authMode === 'signup' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setAuthMode('signup')}
+            >
+              Signup
+            </button>
+          </div>
+          <form onSubmit={submitAuth} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
+              <select 
+                id="role"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                value={role} 
+                onChange={(e) => setRole(e.target.value)}
+              >
+                <option value="recruiter">Recruiter</option>
+                <option value="job_seeker">Job Seeker</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email"
+                type="email" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                placeholder="you@example.com" 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input 
+                id="password"
+                type="password" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                placeholder="••••••••" 
+              />
+            </div>
+            <Button type="submit" className="w-full">
+              {authMode === 'login' ? 'Sign In' : 'Create Account'}
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="justify-center text-xs text-muted-foreground">
+          This demo auth keeps flow simple while focusing on core logic.
+        </CardFooter>
+      </Card>
+    </div>
+  )
+}
+
+function App() {
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('project8User')
     return saved ? JSON.parse(saved) : null
   })
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [jobId, setJobId] = useState('job-ai-001')
-  const [jdText, setJdText] = useState(
-    'Junior AI Engineer role with Python, FastAPI, LangChain, RAG, testing, and deployment skills.'
+
+  // Simple placeholder components while we build the pages
+  const Placeholder = ({ name }) => (
+    <div className="flex h-[60vh] items-center justify-center rounded-xl border border-dashed p-8 text-center animate-in fade-in duration-500">
+      <div className="space-y-3">
+        <h2 className="text-xl font-semibold text-muted-foreground">{name} Component Coming Soon</h2>
+        <p className="text-sm text-muted-foreground/60 max-w-sm mx-auto">
+          We are currently building this view with Shadcn UI components and full backend integration.
+        </p>
+      </div>
+    </div>
   )
-  const [candidateJson, setCandidateJson] = useState(JSON.stringify(sampleCandidates, null, 2))
-  const [screeningResult, setScreeningResult] = useState(null)
-  const [seekerName, setSeekerName] = useState('Your Name')
-  const [seekerCvText, setSeekerCvText] = useState('')
-  const [fitResult, setFitResult] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
 
-  const topCards = useMemo(() => {
-    const results = screeningResult?.results || []
-    const shortlisted = results.filter((r) =>
-      ['fast_track', 'strong_fit', 'borderline'].includes(r?.decision?.label)
-    ).length
-    return [
-      { label: 'Candidates Processed', value: results.length || 0 },
-      { label: 'Shortlisted', value: shortlisted },
-      { label: 'Need Human Review', value: results.filter((r) => r?.decision?.label === 'needs_human_review').length },
-    ]
-  }, [screeningResult])
-
-  const submitAuth = (event) => {
-    event.preventDefault()
-    if (!email || !password) return
-    const newUser = { email, role }
-    localStorage.setItem('project8User', JSON.stringify(newUser))
-    setUser(newUser)
-    setError('')
+  if (!user) {
+    return <LoginPage onLogin={setUser} />
   }
 
-  const logout = () => {
-    localStorage.removeItem('project8User')
-    setUser(null)
-    setScreeningResult(null)
-    setFitResult(null)
-  }
-
-  const runRecruiterScreen = async () => {
-    try {
-      setLoading(true)
-      setError('')
-      const candidates = JSON.parse(candidateJson)
-      const response = await fetch(`${API_BASE_URL}/screen`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ job_id: jobId, jd_text: jdText, candidates }),
-      })
-      if (!response.ok) throw new Error(`Screening failed (${response.status})`)
-      setScreeningResult(await response.json())
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const runSeekerFitCheck = async () => {
-    try {
-      if (seekerCvText.trim().length < 30) {
-        setError('Please add more CV details (at least 30 characters).')
-        return
-      }
-      setLoading(true)
-      setError('')
-      const response = await fetch(`${API_BASE_URL}/screen`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          job_id: jobId,
-          jd_text: jdText,
-          candidates: [{ candidate_id: 'self-check', name: seekerName, cv_text: seekerCvText, declared_skills: [] }],
-        }),
-      })
-      if (!response.ok) throw new Error(`Fit check failed (${response.status})`)
-      const data = await response.json()
-      setFitResult(data.results?.[0] || null)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
+  // Job Seeker flow (simple for now)
+  if (user.role === 'job_seeker') {
+    return (
+      <div className="min-h-screen bg-slate-50 p-8 flex flex-col items-center">
+        <div className="w-full max-w-4xl flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold">Job Seeker Portal</h1>
+          <Button variant="outline" onClick={() => {
+            localStorage.removeItem('project8User');
+            setUser(null);
+          }}>Logout</Button>
+        </div>
+        <Card className="w-full max-w-4xl p-12">
+          <Placeholder name="Job Seeker Fit Check" />
+        </Card>
+      </div>
+    )
   }
 
   return (
-    <div className="app-shell">
-      <header className="topbar">
-        <div>
-          <h1>Project 08: AI Hiring Screener</h1>
-          <p>Deep-agent hiring with recruiter and job seeker workflows.</p>
-        </div>
-        {user && (
-          <div className="topbar-actions">
-            <span className="badge">{user.role}</span>
-            <button onClick={logout}>Logout</button>
-          </div>
-        )}
-      </header>
-
-      {!user ? (
-        <section className="auth-card">
-          <div className="auth-switch">
-            <button className={authMode === 'login' ? 'active' : ''} onClick={() => setAuthMode('login')}>
-              Login
-            </button>
-            <button className={authMode === 'signup' ? 'active' : ''} onClick={() => setAuthMode('signup')}>
-              Signup
-            </button>
-          </div>
-          <form onSubmit={submitAuth}>
-            <label>
-              Role
-              <select value={role} onChange={(e) => setRole(e.target.value)}>
-                <option value="recruiter">Recruiter</option>
-                <option value="job_seeker">Job Seeker</option>
-              </select>
-            </label>
-            <label>
-              Email
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
-            </label>
-            <label>
-              Password
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="********" />
-            </label>
-            <button type="submit">{authMode === 'login' ? 'Sign In' : 'Create Account'}</button>
-          </form>
-          <p className="hint">This demo auth keeps flow simple and low-click while we focus on core hiring logic.</p>
-        </section>
-      ) : (
-        <main className="dashboard">
-          <section className="quickbar">
-            <div className="quick-item">
-              <label>Job ID</label>
-              <input value={jobId} onChange={(e) => setJobId(e.target.value)} />
-            </div>
-            <div className="quick-item expand">
-              <label>JD Snapshot</label>
-              <input value={jdText} onChange={(e) => setJdText(e.target.value)} />
-            </div>
-          </section>
-
-          {user.role === 'recruiter' ? (
-            <>
-              <section className="cards">
-                {topCards.map((card) => (
-                  <article key={card.label} className="card">
-                    <h3>{card.value}</h3>
-                    <p>{card.label}</p>
-                  </article>
-                ))}
-              </section>
-
-              <JDGeneratorForm onSubmit={(data) => console.log("Intake saved:", data)} />
-
-              <section className="panel-grid">
-                <article className="panel">
-                  <h2>One-Click Batch Screening</h2>
-                  <p>Paste candidate JSON and run the deep-agent workflow.</p>
-                  <textarea value={candidateJson} onChange={(e) => setCandidateJson(e.target.value)} rows={14} />
-                  <button onClick={runRecruiterScreen} disabled={loading}>{loading ? 'Running...' : 'Run Screening'}</button>
-                </article>
-
-                <article className="panel">
-                  <h2>Results</h2>
-                  {!screeningResult ? (
-                    <p>No results yet.</p>
-                  ) : (
-                    <div className="result-list">
-                      {screeningResult.results.map((item) => (
-                        <div key={item.candidate_id} className="result-row">
-                          <div>
-                            <strong>{item.candidate_id}</strong>
-                            <p>{item.decision?.label}</p>
-                          </div>
-                          <span>Score: {item.decision?.final_score}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </article>
-              </section>
-            </>
-          ) : (
-            <section className="panel-grid single">
-              <article className="panel">
-                <h2>Fit Probability Check</h2>
-                <label>
-                  Name
-                  <input value={seekerName} onChange={(e) => setSeekerName(e.target.value)} />
-                </label>
-                <label>
-                  CV Text
-                  <textarea value={seekerCvText} onChange={(e) => setSeekerCvText(e.target.value)} rows={14} />
-                </label>
-                <button onClick={runSeekerFitCheck} disabled={loading}>{loading ? 'Analyzing...' : 'Check My Fit'}</button>
-              </article>
-
-              <article className="panel">
-                <h2>Your Report</h2>
-                {!fitResult ? (
-                  <p>Run fit check to view score, mismatch reasons, and improvement path.</p>
-                ) : (
-                  <div className="fit-output">
-                    <p><strong>Decision:</strong> {fitResult.decision?.label}</p>
-                    <p><strong>Score:</strong> {fitResult.decision?.final_score}</p>
-                    <h4>Skill Gaps</h4>
-                    <pre>{JSON.stringify(fitResult.skill_gap, null, 2)}</pre>
-                  </div>
-                )}
-              </article>
-            </section>
-          )}
-
-          {error && <p className="error">{error}</p>}
-        </main>
-      )}
-
-      <footer>
-        <small>API: <code>{API_BASE_URL}</code></small>
-      </footer>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<Navigate to="/jd-intake" replace />} />
+          
+          <Route path="/jd-intake" element={<JDIntakePage />} />
+          <Route path="/jd-intake/new" element={<JDIntakePage />} />
+          
+          <Route path="/jobs" element={<JobListingPage />} />
+          <Route path="/jobs/:id" element={<JobDescriptionPage />} />
+          
+          <Route path="/candidates" element={<CandidatesPage />} />
+          <Route path="/candidates/:id" element={<CandidateProfilePage />} />
+          
+          <Route path="/scoring/:jobId" element={<ScoringLeaderboardPage />} />
+          <Route path="/scoring/:applicationId/detail" element={<ScoreDetailPage />} />
+          
+          <Route path="*" element={<Navigate to="/jd-intake" replace />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   )
 }
 
