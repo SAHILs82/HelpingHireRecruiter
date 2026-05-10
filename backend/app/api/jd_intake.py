@@ -13,6 +13,22 @@ from app.ai.agents.jd_generator_agent import generate_job_description
 
 router = APIRouter()
 
+
+@router.get("/", response_model=list[JDIntakeResponse])
+async def list_jd_intakes(
+    limit: int = 50,
+    offset: int = 0,
+    db: AsyncSession = Depends(get_session)
+) -> Any:
+    """
+    List all JD intake forms, newest first.
+    """
+    result = await db.execute(
+        select(JDIntake).order_by(JDIntake.created_at.desc()).limit(limit).offset(offset)
+    )
+    return result.scalars().all()
+
+
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_jd_intake(
     payload: JDIntakeCreate,

@@ -48,18 +48,33 @@ async def create_application(
     return application
 
 
-@router.get("/job/{job_id}", response_model=List[ApplicationResponse])
+@router.get("/job/{job_id}")
 async def get_applications_by_job(
     job_id: uuid.UUID,
     db: AsyncSession = Depends(get_session)
 ) -> Any:
     """
-    Get all applications for a specific job (HR view).
+    Get all applications for a specific job (HR view) with candidate details.
     """
     result = await db.execute(
-        select(CandidateApplication).filter(CandidateApplication.job_id == job_id)
+        select(CandidateApplication, Candidate.full_name, Candidate.email)
+        .join(Candidate, CandidateApplication.candidate_id == Candidate.id)
+        .filter(CandidateApplication.job_id == job_id)
     )
-    return result.scalars().all()
+    
+    rows = result.all()
+    return [
+        {
+            "id": str(app.id),
+            "candidate_id": str(app.candidate_id),
+            "job_id": str(app.job_id),
+            "status": app.status,
+            "applied_at": app.applied_at.isoformat(),
+            "candidate_name": full_name,
+            "candidate_email": email
+        }
+        for app, full_name, email in rows
+    ]
 
 
 @router.get("/candidate/{candidate_id}", response_model=List[ApplicationResponse])

@@ -100,8 +100,8 @@ export default function JDGeneratorForm({ initialData, onSaved }) {
   return (
     <Card className="max-w-4xl mx-auto shadow-sm">
       <CardHeader>
-        <CardTitle>{intakeId ? 'Edit Draft' : 'Basic Details'}</CardTitle>
-        <CardDescription>Fill out the role constraints to guide the AI generation process.</CardDescription>
+        <CardTitle>{intakeId ? 'Edit Draft' : 'Role Intake'}</CardTitle>
+        <CardDescription>Just provide the domain and a brief role summary. Our specialized AI handles the industry standards and deep requirements.</CardDescription>
       </CardHeader>
       <form onSubmit={handleSave}>
         <CardContent className="space-y-6">
@@ -117,7 +117,7 @@ export default function JDGeneratorForm({ initialData, onSaved }) {
             
             <div className="space-y-2">
               <Label>Domain / Industry</Label>
-              <Input type="text" name="domain" value={formData.domain} onChange={handleChange} placeholder="e.g. Engineering, Marketing..." />
+              <Input type="text" name="domain" value={formData.domain} onChange={handleChange} placeholder="e.g. Software Engineering, Sales, Healthcare..." />
             </div>
             <div className="space-y-2">
               <Label>Role Type</Label>
@@ -160,7 +160,7 @@ export default function JDGeneratorForm({ initialData, onSaved }) {
               name="description" required minLength={20}
               value={formData.description} onChange={handleChange} 
               rows={6}
-              placeholder="We are looking for a backend engineer to join our core payments team. They will work primarily with Python and AWS..." 
+              placeholder="Provide a short, informative description. Don't worry about the details—our domain-specific AI will generate the complete professional JD for you!" 
               className="resize-y"
             />
           </div>

@@ -12,6 +12,7 @@ import CandidatesPage from './pages/CandidatesPage'
 import CandidateProfilePage from './pages/CandidateProfilePage'
 import ScoringLeaderboardPage from './pages/ScoringLeaderboardPage'
 import ScoreDetailPage from './pages/ScoreDetailPage'
+import JobSeekerDashboard from './pages/JobSeekerDashboard'
 
 // Auth Components
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './components/ui/card'
@@ -115,61 +116,46 @@ function App() {
     return saved ? JSON.parse(saved) : null
   })
 
-  // Simple placeholder components while we build the pages
-  const Placeholder = ({ name }) => (
-    <div className="flex h-[60vh] items-center justify-center rounded-xl border border-dashed p-8 text-center animate-in fade-in duration-500">
-      <div className="space-y-3">
-        <h2 className="text-xl font-semibold text-muted-foreground">{name} Component Coming Soon</h2>
-        <p className="text-sm text-muted-foreground/60 max-w-sm mx-auto">
-          We are currently building this view with Shadcn UI components and full backend integration.
-        </p>
-      </div>
-    </div>
-  )
-
   if (!user) {
     return <LoginPage onLogin={setUser} />
   }
 
-  // Job Seeker flow (simple for now)
-  if (user.role === 'job_seeker') {
-    return (
-      <div className="min-h-screen bg-slate-50 p-8 flex flex-col items-center">
-        <div className="w-full max-w-4xl flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold">Job Seeker Portal</h1>
-          <Button variant="outline" onClick={() => {
-            localStorage.removeItem('project8User');
-            setUser(null);
-          }}>Logout</Button>
-        </div>
-        <Card className="w-full max-w-4xl p-12">
-          <Placeholder name="Job Seeker Fit Check" />
-        </Card>
-      </div>
-    )
-  }
-
   return (
     <BrowserRouter>
-      <Routes>
-        <Route element={<AppLayout />}>
-          <Route path="/" element={<Navigate to="/jd-intake" replace />} />
-          
-          <Route path="/jd-intake" element={<JDIntakePage />} />
-          <Route path="/jd-intake/new" element={<JDIntakePage />} />
-          
-          <Route path="/jobs" element={<JobListingPage />} />
-          <Route path="/jobs/:id" element={<JobDescriptionPage />} />
-          
-          <Route path="/candidates" element={<CandidatesPage />} />
-          <Route path="/candidates/:id" element={<CandidateProfilePage />} />
-          
-          <Route path="/scoring/:jobId" element={<ScoringLeaderboardPage />} />
-          <Route path="/scoring/:applicationId/detail" element={<ScoreDetailPage />} />
-          
-          <Route path="*" element={<Navigate to="/jd-intake" replace />} />
-        </Route>
-      </Routes>
+      {user.role === 'job_seeker' ? (
+        <div className="min-h-screen bg-slate-50">
+          <div className="bg-white border-b sticky top-0 z-10 shadow-sm">
+            <div className="max-w-6xl mx-auto px-6 h-16 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded bg-primary text-white flex items-center justify-center font-bold">HH</div>
+                <span className="font-bold text-xl tracking-tight">HelpingHire <span className="text-primary">Seeker</span></span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-muted-foreground font-medium hidden sm:inline-block">{user.email}</span>
+                <Button variant="ghost" className="text-sm font-semibold hover:bg-slate-100" onClick={() => {
+                  localStorage.removeItem('project8User');
+                  setUser(null);
+                }}>Logout</Button>
+              </div>
+            </div>
+          </div>
+          <JobSeekerDashboard />
+        </div>
+      ) : (
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<Navigate to="/jd-intake" replace />} />
+            <Route path="/jd-intake" element={<JDIntakePage />} />
+            <Route path="/jobs" element={<JobListingPage />} />
+            <Route path="/jobs/:id" element={<JobDescriptionPage />} />
+            <Route path="/candidates" element={<CandidatesPage />} />
+            <Route path="/candidates/:id" element={<CandidateProfilePage />} />
+            <Route path="/scoring/:jobId" element={<ScoringLeaderboardPage />} />
+            <Route path="/scoring/:applicationId/detail" element={<ScoreDetailPage />} />
+            <Route path="*" element={<Navigate to="/jd-intake" replace />} />
+          </Route>
+        </Routes>
+      )}
     </BrowserRouter>
   )
 }

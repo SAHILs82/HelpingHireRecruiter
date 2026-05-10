@@ -9,7 +9,7 @@ from sqlalchemy.future import select
 from app.db.models.cv_score import CVScore
 from app.db.models.candidate_application import CandidateApplication
 from app.db.session import get_session
-from app.schemas.cv_score import CVScoreResponse
+from app.schemas.cv_scoring_schema import CVScoreResponse
 from app.ai.agents.cv_scoring_agent import evaluate_candidate
 
 router = APIRouter()
@@ -94,13 +94,44 @@ async def get_scores_by_candidate(
     return result.scalars().all()
 
 
+@router.get("/job/{job_id}/leaderboard")
+async def get_leaderboard(
+    job_id: uuid.UUID,
+    db: AsyncSession = Depends(get_session),
+) -> Any:
+    """
+    Get the top scores for a specific job, including candidate names.
+    """
+    result = await db.execute(
+        select(CVScore, Candidate.full_name)
+        .join(Candidate, CVScore.candidate_id == Candidate.id)
+        .filter(CVScore.job_id == job_id)
+        .order_by(CVScore.raw_score.desc())
+    )
+    
+    rows = result.all()
+    return [
+        {
+            "id": str(score.id),
+            "application_id": str(score.application_id),
+            "candidate_id": str(score.candidate_id),
+            "candidate_name": full_name,
+            "score": score.raw_score,
+            "recommendation": score.recommendation,
+            "status": score.status,
+            "version": score.version,
+            "created_at": score.created_at.isoformat()
+        }
+        for score, full_name in rows
+    ]
+
 @router.get("/job/{job_id}", response_model=List[CVScoreResponse])
 async def get_scores_by_job(
     job_id: uuid.UUID,
     db: AsyncSession = Depends(get_session),
 ) -> Any:
     """
-    Get all scores for a specific job across all candidates (HR leaderboard view).
+    Get all scores for a specific job.
     """
     result = await db.execute(
         select(CVScore)

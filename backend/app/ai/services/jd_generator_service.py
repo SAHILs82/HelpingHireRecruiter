@@ -35,7 +35,12 @@ def prepare_jd_generator_prompts(intake: AgentJDIntake) -> tuple[str, str]:
     db = SessionLocal()
     try:
         active_prompts = load_active_prompt_map(db, LLM_USE_CASE_JD_GENERATOR)
-        system_prompt = resolve_full_prompt(active_prompts, "system", FALLBACK_SYSTEM_PROMPT)
+        
+        from app.ai.utils.domain_mapper import map_to_variant_key
+        search_text = f"{intake.domain or ''} {intake.role_type or ''} {intake.description[:200]}"
+        variant_key = map_to_variant_key(search_text)
+        
+        system_prompt = resolve_full_prompt(active_prompts, variant_key, FALLBACK_SYSTEM_PROMPT)
     finally:
         db.close()
 
