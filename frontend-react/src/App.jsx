@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import AppLayout from './layouts/AppLayout'
+import { authAPI } from './api/authAPI'
 
 // Pages
-// import DashboardPage from './pages/DashboardPage'
 import JDIntakePage from './pages/JDIntakePage'
-// import JDIntakeDetailPage from './pages/JDIntakeDetailPage'
 import JobListingPage from './pages/JobListingPage'
 import JobDescriptionPage from './pages/JobDescriptionPage'
 import CandidatesPage from './pages/CandidatesPage'
@@ -13,150 +12,104 @@ import CandidateProfilePage from './pages/CandidateProfilePage'
 import ScoringLeaderboardPage from './pages/ScoringLeaderboardPage'
 import ScoreDetailPage from './pages/ScoreDetailPage'
 import JobSeekerDashboard from './pages/JobSeekerDashboard'
-
-// Auth Components
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './components/ui/card'
-import { Input } from './components/ui/input'
-import { Label } from './components/ui/label'
+import LoginPage from './pages/auth/LoginPage'
+import SignupPage from './pages/auth/SignupPage'
 import { Button } from './components/ui/button'
-
-function LoginPage({ onLogin }) {
-// ... existing Login component
-  const [authMode, setAuthMode] = useState('login')
-  const [role, setRole] = useState('recruiter')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-
-  const submitAuth = (e) => {
-    e.preventDefault()
-    if (!email || !password) return
-    const newUser = { email, role }
-    localStorage.setItem('project8User', JSON.stringify(newUser))
-    onLogin(newUser)
-  }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="text-center space-y-2">
-          <div className="mx-auto w-12 h-12 rounded-lg bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mb-2">
-            HH
-          </div>
-          <CardTitle className="text-2xl font-bold">HelpingHire AI</CardTitle>
-          <CardDescription>
-            Deep-agent hiring with recruiter and job seeker workflows
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-2 mb-6 p-1 bg-muted rounded-lg">
-            <button
-              type="button"
-              className={`py-1.5 px-3 text-sm font-medium rounded-md transition-all ${authMode === 'login' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-              onClick={() => setAuthMode('login')}
-            >
-              Login
-            </button>
-            <button
-              type="button"
-              className={`py-1.5 px-3 text-sm font-medium rounded-md transition-all ${authMode === 'signup' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-              onClick={() => setAuthMode('signup')}
-            >
-              Signup
-            </button>
-          </div>
-          <form onSubmit={submitAuth} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
-              <select 
-                id="role"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                value={role} 
-                onChange={(e) => setRole(e.target.value)}
-              >
-                <option value="recruiter">Recruiter</option>
-                <option value="job_seeker">Job Seeker</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email"
-                type="email" 
-                value={email} 
-                onChange={(e) => setEmail(e.target.value)} 
-                placeholder="you@example.com" 
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password"
-                type="password" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                placeholder="••••••••" 
-              />
-            </div>
-            <Button type="submit" className="w-full">
-              {authMode === 'login' ? 'Sign In' : 'Create Account'}
-            </Button>
-          </form>
-        </CardContent>
-        <CardFooter className="justify-center text-xs text-muted-foreground">
-          This demo auth keeps flow simple while focusing on core logic.
-        </CardFooter>
-      </Card>
-    </div>
-  )
-}
+import { ToastProvider } from './components/ui/CustomToast'
 
 function App() {
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('project8User')
     return saved ? JSON.parse(saved) : null
   })
+  const [isInitializing, setIsInitializing] = useState(true)
 
-  if (!user) {
-    return <LoginPage onLogin={setUser} />
+  useEffect(() => {
+    const initAuth = async () => {
+      const token = localStorage.getItem('project8Token')
+      if (token && !user) {
+        try {
+          const userData = await authAPI.getCurrentUser(token)
+          setUser(userData)
+          localStorage.setItem('project8User', JSON.stringify(userData))
+        } catch (err) {
+          console.error("Session restoration failed", err)
+          localStorage.removeItem('project8Token')
+          localStorage.removeItem('project8User')
+        }
+      }
+      setIsInitializing(false)
+    }
+    initAuth()
+  }, [])
+
+  const logout = () => {
+    localStorage.removeItem('project8User');
+    localStorage.removeItem('project8Token');
+    setUser(null);
+  };
+
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="w-12 h-12 border-4 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin" />
+      </div>
+    )
   }
 
   return (
-    <BrowserRouter>
-      {user.role === 'job_seeker' ? (
-        <div className="min-h-screen bg-slate-50">
-          <div className="bg-white border-b sticky top-0 z-10 shadow-sm">
-            <div className="max-w-6xl mx-auto px-6 h-16 flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded bg-primary text-white flex items-center justify-center font-bold">HH</div>
-                <span className="font-bold text-xl tracking-tight">HelpingHire <span className="text-primary">Seeker</span></span>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-muted-foreground font-medium hidden sm:inline-block">{user.email}</span>
-                <Button variant="ghost" className="text-sm font-semibold hover:bg-slate-100" onClick={() => {
-                  localStorage.removeItem('project8User');
-                  setUser(null);
-                }}>Logout</Button>
+    <ToastProvider>
+      <BrowserRouter>
+        {!user ? (
+          <Routes>
+            <Route path="/login" element={<LoginPage onLogin={setUser} />} />
+            <Route path="/signup" element={<SignupPage onLogin={setUser} />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        ) : user.role === 'job_seeker' ? (
+          <div className="min-h-screen bg-slate-50 flex flex-col">
+            <div className="bg-white border-b sticky top-0 z-20 shadow-sm">
+              <div className="max-w-7xl mx-auto px-6 h-16 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black shadow-lg shadow-indigo-200">HH</div>
+                  <span className="font-extrabold text-xl tracking-tight text-slate-900">HelpingHire <span className="text-indigo-600">Seeker</span></span>
+                </div>
+                <div className="flex items-center gap-6">
+                  <div className="hidden sm:flex flex-col items-end">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Logged in as</span>
+                    <span className="text-sm text-slate-700 font-bold leading-none">{user.email}</span>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    className="text-sm font-bold text-slate-600 hover:bg-slate-100 hover:text-red-600 rounded-xl px-5 py-2 transition-all" 
+                    onClick={logout}
+                  >
+                    Logout
+                  </Button>
+                </div>
               </div>
             </div>
+            <main className="flex-1 overflow-auto">
+              <JobSeekerDashboard />
+            </main>
           </div>
-          <JobSeekerDashboard />
-        </div>
-      ) : (
-        <Routes>
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<Navigate to="/jd-intake" replace />} />
-            <Route path="/jd-intake" element={<JDIntakePage />} />
-            <Route path="/jobs" element={<JobListingPage />} />
-            <Route path="/jobs/:id" element={<JobDescriptionPage />} />
-            <Route path="/candidates" element={<CandidatesPage />} />
-            <Route path="/candidates/:id" element={<CandidateProfilePage />} />
-            <Route path="/scoring/:jobId" element={<ScoringLeaderboardPage />} />
-            <Route path="/scoring/:applicationId/detail" element={<ScoreDetailPage />} />
-            <Route path="*" element={<Navigate to="/jd-intake" replace />} />
-          </Route>
-        </Routes>
-      )}
-    </BrowserRouter>
+        ) : (
+          <Routes>
+            <Route element={<AppLayout onLogout={logout} user={user} />}>
+              <Route path="/" element={<Navigate to="/jd-intake" replace />} />
+              <Route path="/jd-intake" element={<JDIntakePage />} />
+              <Route path="/jobs" element={<JobListingPage />} />
+              <Route path="/jobs/:id" element={<JobDescriptionPage />} />
+              <Route path="/candidates" element={<CandidatesPage />} />
+              <Route path="/candidates/:id" element={<CandidateProfilePage />} />
+              <Route path="/scoring/:jobId" element={<ScoringLeaderboardPage />} />
+              <Route path="/scoring/:applicationId/detail" element={<ScoreDetailPage />} />
+              <Route path="*" element={<Navigate to="/jd-intake" replace />} />
+            </Route>
+          </Routes>
+        )}
+      </BrowserRouter>
+    </ToastProvider>
   )
 }
 
