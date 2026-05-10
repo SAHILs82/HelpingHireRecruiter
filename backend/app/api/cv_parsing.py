@@ -101,7 +101,9 @@ async def update_candidate(
     await db.refresh(candidate)
     return {"id": str(candidate.id), "status": "updated"}
 
-@router.get("/candidate/{candidate_id}")
+from app.schemas.candidate_details import CandidateUpdate, CandidateResponse
+
+@router.get("/candidate/{candidate_id}", response_model=CandidateResponse)
 async def get_candidate(
     candidate_id: uuid.UUID,
     db: AsyncSession = Depends(get_session)

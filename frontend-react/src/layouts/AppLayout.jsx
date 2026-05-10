@@ -23,7 +23,7 @@ export default function AppLayout() {
 
   const handleLogout = () => {
     localStorage.removeItem('project8User');
-    navigate('/login');
+    window.location.href = '/';
   };
 
   const navItems = [

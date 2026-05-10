@@ -8,6 +8,8 @@ from sqlalchemy.future import select
 
 from app.db.models.cv_score import CVScore
 from app.db.models.candidate_application import CandidateApplication
+from app.db.models.candidate_details import Candidate
+from app.db.models.job_description import JobDescription
 from app.db.session import get_session
 from app.schemas.cv_scoring_schema import CVScoreResponse
 from app.ai.agents.cv_scoring_agent import evaluate_candidate
@@ -93,6 +95,21 @@ async def get_scores_by_candidate(
     )
     return result.scalars().all()
 
+def _normalize_score(raw: float) -> float:
+    """If the LLM returned a 0-1 decimal, scale it to 0-100."""
+    return round(raw * 100, 1) if raw <= 1.0 else round(raw, 1)
+
+
+def _score_to_recommendation(raw_score: float) -> str:
+    """Derive a recommendation label from the normalized 0-100 score."""
+    if raw_score >= 80:
+        return "Strong Hire"
+    elif raw_score >= 60:
+        return "Hire"
+    elif raw_score >= 40:
+        return "Maybe"
+    return "No Hire"
+
 
 @router.get("/job/{job_id}/leaderboard")
 async def get_leaderboard(
@@ -100,11 +117,16 @@ async def get_leaderboard(
     db: AsyncSession = Depends(get_session),
 ) -> Any:
     """
-    Get the top scores for a specific job, including candidate names.
+    Get the top scores for a specific job, including candidate names and application IDs.
     """
     result = await db.execute(
-        select(CVScore, Candidate.full_name)
+        select(CVScore, Candidate.full_name, CandidateApplication.id.label("app_id"))
         .join(Candidate, CVScore.candidate_id == Candidate.id)
+        .join(
+            CandidateApplication,
+            (CandidateApplication.candidate_id == CVScore.candidate_id)
+            & (CandidateApplication.job_id == CVScore.job_id),
+        )
         .filter(CVScore.job_id == job_id)
         .order_by(CVScore.raw_score.desc())
     )
@@ -113,16 +135,16 @@ async def get_leaderboard(
     return [
         {
             "id": str(score.id),
-            "application_id": str(score.application_id),
+            "application_id": str(app_id),
             "candidate_id": str(score.candidate_id),
             "candidate_name": full_name,
-            "score": score.raw_score,
-            "recommendation": score.recommendation,
+            "score": _normalize_score(score.raw_score),
+            "recommendation": _score_to_recommendation(_normalize_score(score.raw_score)),
             "status": score.status,
             "version": score.version,
             "created_at": score.created_at.isoformat()
         }
-        for score, full_name in rows
+        for score, full_name, app_id in rows
     ]
 
 @router.get("/job/{job_id}", response_model=List[CVScoreResponse])
@@ -166,3 +188,59 @@ async def update_score_status(
     await db.refresh(score)
 
     return {"id": str(score.id), "status": score.status}
+
+
+@router.get("/application/{application_id}/score-detail")
+async def get_application_score_detail(
+    application_id: uuid.UUID,
+    db: AsyncSession = Depends(get_session),
+) -> Any:
+    """
+    Get a rich score detail view for the ScoreDetailPage frontend.
+    Looks up the latest CVScore via CandidateApplication and returns
+    a shaped payload the UI expects.
+    """
+    application = await db.get(CandidateApplication, application_id)
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    result = await db.execute(
+        select(CVScore, Candidate.full_name, JobDescription.role_title)
+        .join(Candidate, CVScore.candidate_id == Candidate.id)
+        .join(JobDescription, CVScore.job_id == JobDescription.id)
+        .filter(
+            CVScore.candidate_id == application.candidate_id,
+            CVScore.job_id == application.job_id,
+        )
+        .order_by(CVScore.version.desc())
+        .limit(1)
+    )
+    row = result.first()
+    if not row:
+        raise HTTPException(status_code=404, detail="No scores found for this application")
+
+    score_obj, candidate_name, job_title = row
+
+    # Normalize: if raw_score looks like a 0-1 decimal, scale to 0-100
+    raw = score_obj.raw_score
+    normalized_score = _normalize_score(raw)
+
+    # Normalize category breakdowns too
+    raw_breakdown = score_obj.category_scores or {}
+    breakdown = {k: _normalize_score(v) for k, v in raw_breakdown.items()} if raw_breakdown else {}
+
+    return {
+        "application_id": str(application_id),
+        "score_id": str(score_obj.id),
+        "candidate_name": candidate_name or "Unknown",
+        "job_title": job_title or "Unknown Role",
+        "score": normalized_score,
+        "breakdown": breakdown,
+        "strengths": score_obj.strengths or [],
+        "weaknesses": score_obj.weaknesses or [],
+        "missing_requirements": [],  # Could be derived from weaknesses
+        "recommendation": _score_to_recommendation(normalized_score),
+        "agent_summary": score_obj.reasoning_summary or "No summary available.",
+        "status": score_obj.status,
+        "created_at": score_obj.created_at.isoformat(),
+    }

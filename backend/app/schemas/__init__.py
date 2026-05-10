@@ -6,3 +6,4 @@ from app.schemas.candidate_details import *
 from app.schemas.review_flow import *
 from app.schemas.cv_scoring_schema import *
 from app.schemas.bias_report import *
+from app.schemas.skill_gap import *

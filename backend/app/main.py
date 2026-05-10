@@ -29,6 +29,7 @@ from app.api.cv_parsing import router as cv_parsing_router
 from app.api.candidate_application import router as candidate_application_router
 from app.api.cv_scoring import router as cv_scoring_router
 from app.api.job_description import router as job_description_router
+from app.api.skill_gap import router as skill_gap_router
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
 app.add_middleware(
@@ -47,6 +48,7 @@ app.include_router(cv_parsing_router, prefix="/api/cv-parsing", tags=["CV Parsin
 app.include_router(candidate_application_router, prefix="/api/applications", tags=["Candidate Applications"])
 app.include_router(cv_scoring_router, prefix="/api/scoring", tags=["CV Scoring"])
 app.include_router(job_description_router, prefix="/api/jobs", tags=["Job Descriptions"])
+app.include_router(skill_gap_router, prefix="/api/skill-gap", tags=["Skill Gap Analysis"])
 
 @app.get("/health")
 async def health() -> Dict[str, str]:

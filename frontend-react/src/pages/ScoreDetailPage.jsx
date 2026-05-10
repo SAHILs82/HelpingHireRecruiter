@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getApplicationScoreDetail } from '../components/api/scoringAPI';
+import { getSkillGapReport, triggerSkillGapAnalysis } from '../components/api/skillGapAPI';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import { Loader2, ArrowLeft, CheckCircle2, XCircle, AlertCircle, TrendingUp } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle2, XCircle, AlertCircle, TrendingUp, Microscope, Sparkles } from 'lucide-react';
+import SkillGapPanel from '../components/SkillGapPanel';
 
 export default function ScoreDetailPage() {
   const { applicationId } = useParams();
@@ -12,6 +14,12 @@ export default function ScoreDetailPage() {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Skill gap state
+  const [skillGapReport, setSkillGapReport] = useState(null);
+  const [skillGapLoading, setSkillGapLoading] = useState(false);
+  const [skillGapError, setSkillGapError] = useState(null);
+  const [runningAnalysis, setRunningAnalysis] = useState(false);
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -26,6 +34,34 @@ export default function ScoreDetailPage() {
     };
     fetchDetail();
   }, [applicationId]);
+
+  // Try to load existing skill gap report
+  useEffect(() => {
+    const fetchReport = async () => {
+      try {
+        const report = await getSkillGapReport(applicationId);
+        setSkillGapReport(report);
+      } catch {
+        // 404 = no report yet, that's fine
+      }
+    };
+    fetchReport();
+  }, [applicationId]);
+
+  const handleRunAnalysis = async () => {
+    setRunningAnalysis(true);
+    setSkillGapError(null);
+    try {
+      await triggerSkillGapAnalysis(applicationId);
+      // After triggering, fetch the report
+      const report = await getSkillGapReport(applicationId);
+      setSkillGapReport(report);
+    } catch (err) {
+      setSkillGapError(err.message);
+    } finally {
+      setRunningAnalysis(false);
+    }
+  };
 
   if (loading) {
     return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
@@ -153,6 +189,77 @@ export default function ScoreDetailPage() {
             </Card>
           )}
         </div>
+      </div>
+
+      {/* ── Skill Gap Analysis Section ── */}
+      <div className="border-t pt-8 mt-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <Microscope size={24} className="text-primary" />
+              Deep Skill Gap Analysis
+            </h2>
+            <p className="text-muted-foreground text-sm mt-1">
+              AI-powered forensic audit using market research & repository scanning
+            </p>
+          </div>
+          {!skillGapReport && (
+            <Button
+              onClick={handleRunAnalysis}
+              disabled={runningAnalysis}
+              className="gap-2 shadow-lg hover:shadow-xl transition-all"
+              size="lg"
+            >
+              {runningAnalysis ? (
+                <><Loader2 size={16} className="animate-spin" /> Analyzing...</>
+              ) : (
+                <><Sparkles size={16} /> Run Analysis</>
+              )}
+            </Button>
+          )}
+          {skillGapReport && (
+            <Button
+              onClick={handleRunAnalysis}
+              disabled={runningAnalysis}
+              variant="outline"
+              className="gap-2"
+              size="sm"
+            >
+              {runningAnalysis ? (
+                <><Loader2 size={14} className="animate-spin" /> Re-analyzing...</>
+              ) : (
+                'Re-run Analysis'
+              )}
+            </Button>
+          )}
+        </div>
+
+        {skillGapError && (
+          <Card className="border-destructive/30 bg-destructive/5 mb-4">
+            <CardContent className="p-4 text-sm text-destructive">
+              Analysis failed: {skillGapError}
+            </CardContent>
+          </Card>
+        )}
+
+        {runningAnalysis && !skillGapReport && (
+          <Card className="border-primary/20 bg-primary/[0.03]">
+            <CardContent className="p-12 text-center space-y-4">
+              <div className="relative mx-auto w-16 h-16">
+                <Loader2 className="w-16 h-16 animate-spin text-primary/30" />
+                <Microscope className="w-6 h-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">Deep analysis in progress...</p>
+                <p className="text-sm text-muted-foreground mt-1">Searching market trends, scanning repos, and auditing skills. This may take 15-30 seconds.</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {skillGapReport && (
+          <SkillGapPanel report={skillGapReport} variant="recruiter" />
+        )}
       </div>
     </div>
   );

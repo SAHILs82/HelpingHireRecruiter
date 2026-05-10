@@ -23,7 +23,7 @@ export interface ApplicationScoreDetail {
 }
 
 export const scoreApplication = async (applicationId: string): Promise<ScoreApplicationResponse> => {
-  return apiRequest<ScoreApplicationResponse>(`/api/scoring/application/${applicationId}/score`, 'POST');
+  return apiRequest<ScoreApplicationResponse>(`/api/scoring/${applicationId}/evaluate`, 'POST');
 };
 
 export const getLeaderboard = async (jobId: string): Promise<any[]> => {

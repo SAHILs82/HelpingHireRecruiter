@@ -3,11 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getLeaderboard, scoreApplication } from '../components/api/scoringAPI';
 import { getJobDescription } from '../components/api/jobDescriptionAPI';
 import { getApplicationsByJob } from '../components/api/applicationAPI';
+import { triggerSkillGapAnalysis, getSkillGapReport } from '../components/api/skillGapAPI';
 import { Card, CardContent } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import { Loader2, ArrowLeft, Trophy, Star, RefreshCw, ChevronRight } from 'lucide-react';
+import { Loader2, ArrowLeft, Trophy, Star, RefreshCw, ChevronRight, Microscope } from 'lucide-react';
 
 export default function ScoringLeaderboardPage() {
   const { jobId } = useParams();
@@ -17,6 +18,8 @@ export default function ScoringLeaderboardPage() {
   const [unscoredApps, setUnscoredApps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [scoringAppId, setScoringAppId] = useState(null);
+  const [analyzingAppId, setAnalyzingAppId] = useState(null);
+  const [gapScores, setGapScores] = useState({});
 
   const fetchData = async () => {
     setLoading(true);
@@ -31,6 +34,18 @@ export default function ScoringLeaderboardPage() {
       
       const scoredAppIds = leaderData.map(l => l.application_id);
       setUnscoredApps(appsData.filter(a => !scoredAppIds.includes(a.id)));
+
+      // Fetch existing skill gap scores for each leaderboard entry
+      const scores = {};
+      for (const entry of leaderData) {
+        try {
+          const report = await getSkillGapReport(entry.application_id);
+          scores[entry.application_id] = report.impact_score;
+        } catch {
+          // No report yet
+        }
+      }
+      setGapScores(scores);
     } catch (err) {
       console.error(err);
     } finally {
@@ -56,9 +71,49 @@ export default function ScoringLeaderboardPage() {
     }
   };
 
+  const handleRunGapAnalysis = async (appId) => {
+    setAnalyzingAppId(appId);
+    try {
+      const result = await triggerSkillGapAnalysis(appId);
+      setGapScores(prev => ({ ...prev, [appId]: result.impact_score }));
+    } catch (err) {
+      alert(`Skill gap analysis failed: ${err.message}`);
+    } finally {
+      setAnalyzingAppId(null);
+    }
+  };
+
   if (loading && !job) {
     return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
+
+  const getGapBadge = (appId) => {
+    if (analyzingAppId === appId) {
+      return <Loader2 size={14} className="animate-spin text-primary" />;
+    }
+    if (gapScores[appId] !== undefined) {
+      const score = gapScores[appId];
+      const readiness = Math.round((1 - score) * 100);
+      const color = readiness >= 80 ? 'bg-green-100 text-green-700 border-green-200' 
+                   : readiness >= 50 ? 'bg-yellow-100 text-yellow-700 border-yellow-200' 
+                   : 'bg-red-100 text-red-700 border-red-200';
+      return (
+        <Badge className={`text-[10px] px-2 py-0.5 border ${color} font-bold`}>
+          {readiness}%
+        </Badge>
+      );
+    }
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-7 text-xs text-muted-foreground hover:text-primary gap-1"
+        onClick={(e) => { e.stopPropagation(); handleRunGapAnalysis(appId); }}
+      >
+        <Microscope size={12} /> Analyze
+      </Button>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -86,13 +141,14 @@ export default function ScoringLeaderboardPage() {
                   <TableHead>Candidate</TableHead>
                   <TableHead>Score</TableHead>
                   <TableHead>Recommendation</TableHead>
+                  <TableHead className="text-center">Gap</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {leaderboard.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
                       No candidates have been scored yet.
                     </TableCell>
                   </TableRow>
@@ -119,6 +175,9 @@ export default function ScoringLeaderboardPage() {
                         <Badge variant={entry.recommendation === 'Strong Hire' ? 'success' : entry.recommendation === 'Hire' ? 'default' : 'secondary'}>
                           {entry.recommendation || 'Pending'}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {getGapBadge(entry.application_id)}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="sm" onClick={() => navigate(`/scoring/${entry.application_id}/detail`)}>
