@@ -79,12 +79,8 @@ def analyze_skill_gap(application_id: str) -> Dict[str, Any]:
         # Bind tools to the LLM (for create_tool_calling_agent behavior)
         # We use with_structured_output to force the final answer format, 
         # but LangChain handles tool usage internally before outputting the final schema if we set it up right.
-        # Actually, to use BOTH tools and structured output, we use bind_tools or a LangGraph setup.
-        # For simplicity in this agent, we will just use the structured output, but pass the tools 
-        # and instruct the LLM to use them if needed. 
-        # Wait, ChatOpenAI.with_structured_output overrides bind_tools. 
-        # To do BOTH, we use a tool-calling agent loop. 
-        from langchain.agents import AgentExecutor, create_openai_tools_agent
+        # To do BOTH, we use a tool-calling agent loop via LangGraph.
+        from langgraph.prebuilt import create_react_agent
         
         # We need the agent to return the structured output.
         # So we tell the agent to output the final answer as JSON matching the schema.
@@ -95,15 +91,8 @@ def analyze_skill_gap(application_id: str) -> Dict[str, Any]:
             + "\\nDo not wrap the JSON in markdown blocks like ```json."
         )
         
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", SYSTEM_PROMPT + schema_instructions),
-            ("user", USER_PROMPT_TEMPLATE),
-            ("placeholder", "{agent_scratchpad}"),
-        ])
-        
         # We create a standard tool-calling agent
-        agent = create_openai_tools_agent(llm, SKILL_GAP_TOOLS, prompt)
-        agent_executor = AgentExecutor(agent=agent, tools=SKILL_GAP_TOOLS, verbose=True)
+        agent_executor = create_react_agent(llm, tools=SKILL_GAP_TOOLS, prompt=SYSTEM_PROMPT + schema_instructions)
         
         # Format the user prompt inputs
         user_prompt_kwargs = {
@@ -118,8 +107,9 @@ def analyze_skill_gap(application_id: str) -> Dict[str, Any]:
         }
         
         # Run the agent
-        response = agent_executor.invoke(user_prompt_kwargs)
-        output_text = response["output"]
+        user_prompt_text = USER_PROMPT_TEMPLATE.format(**user_prompt_kwargs)
+        response = agent_executor.invoke({"messages": [("user", user_prompt_text)]})
+        output_text = response["messages"][-1].content
         
         # Parse the structured JSON output
         try:
@@ -128,6 +118,13 @@ def analyze_skill_gap(application_id: str) -> Dict[str, Any]:
                 output_text = output_text[7:-3].strip()
             elif output_text.startswith("```"):
                 output_text = output_text[3:-3].strip()
+            
+            # If the LLM returned conversational text before/after, extract the JSON part
+            start_idx = output_text.find('{')
+            end_idx = output_text.rfind('}')
+            
+            if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                output_text = output_text[start_idx:end_idx+1]
                 
             agent_output = AgentSkillGapOutput.model_validate_json(output_text)
         except Exception as parse_e:

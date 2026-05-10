@@ -30,6 +30,7 @@ from app.api.candidate_application import router as candidate_application_router
 from app.api.cv_scoring import router as cv_scoring_router
 from app.api.job_description import router as job_description_router
 from app.api.skill_gap import router as skill_gap_router
+from app.api.auth import router as auth_router
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
 app.add_middleware(
@@ -43,6 +44,7 @@ app.add_middleware(
 app.middleware("http")(request_logging_middleware)
 app.state.langsmith_enabled = TRACING_ENABLED
 
+app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(jd_intake_router, prefix="/api/jd/intake", tags=["JD Intake"])
 app.include_router(cv_parsing_router, prefix="/api/cv-parsing", tags=["CV Parsing"])
 app.include_router(candidate_application_router, prefix="/api/applications", tags=["Candidate Applications"])
