@@ -56,7 +56,7 @@ class JobDescription(Base):
         nullable=False,
     )
 
-    cv_scores: Mapped[List["CVScore"]] = relationship("CVScore", back_populates="job")
-    bias_reports: Mapped[list["BiasReportRecord"]] = relationship("BiasReportRecord", back_populates="job", cascade="all, delete")
-    intake: Mapped["JDIntake | None"] = relationship("JDIntake", back_populates="job_descriptions")
-    applications: Mapped[list["CandidateApplication"]] = relationship("CandidateApplication", back_populates="job", cascade="all, delete")
+    cv_scores: Mapped[List["CVScore"]] = relationship("CVScore", back_populates="job", lazy="noload")
+    bias_reports: Mapped[list["BiasReportRecord"]] = relationship("BiasReportRecord", back_populates="job", cascade="all, delete", lazy="noload")
+    intake: Mapped["JDIntake | None"] = relationship("JDIntake", back_populates="job_descriptions", lazy="noload")
+    applications: Mapped[list["CandidateApplication"]] = relationship("CandidateApplication", back_populates="job", cascade="all, delete", lazy="noload")

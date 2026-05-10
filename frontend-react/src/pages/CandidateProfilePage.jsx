@@ -151,15 +151,6 @@ export default function CandidateProfilePage() {
               </CardContent>
             </Card>
           )}
-          
-          <Card>
-             <CardHeader><CardTitle>Raw Extracted Text</CardTitle></CardHeader>
-             <CardContent>
-                <div className="max-h-96 overflow-y-auto bg-muted p-4 rounded-md">
-                   <pre className="text-xs whitespace-pre-wrap font-sans">{candidate.cv_text}</pre>
-                </div>
-             </CardContent>
-          </Card>
         </div>
       </div>
     </div>

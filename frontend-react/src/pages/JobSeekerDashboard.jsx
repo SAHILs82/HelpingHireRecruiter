@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { listJobDescriptions, getJobDescription } from '../components/api/jobDescriptionAPI';
 import { uploadCV } from '../components/api/cvParsingAPI';
+import { getSkillGapReport } from '../components/api/skillGapAPI';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Loader2, MapPin, Briefcase, Building, Upload, CheckCircle2, FileText, X } from 'lucide-react';
+import { Loader2, MapPin, Briefcase, Building, Upload, CheckCircle2, FileText, X, ChevronDown, ChevronUp, Microscope, TrendingUp, Clock, ShieldAlert } from 'lucide-react';
+import SkillGapPanel from '../components/SkillGapPanel';
 
 export default function JobSeekerDashboard() {
   const [jobs, setJobs] = useState([]);
@@ -14,6 +16,12 @@ export default function JobSeekerDashboard() {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [file, setFile] = useState(null);
   const fileInputRef = useRef(null);
+
+  // My Applications state
+  const [myApplications, setMyApplications] = useState([]);
+  const [expandedApp, setExpandedApp] = useState(null);
+  const [loadingReport, setLoadingReport] = useState(null);
+  const [skillGapReports, setSkillGapReports] = useState({});
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -29,6 +37,16 @@ export default function JobSeekerDashboard() {
     fetchJobs();
   }, []);
 
+  // Load applications from localStorage (simple mock for job seeker)
+  useEffect(() => {
+    const saved = localStorage.getItem('myApplications');
+    if (saved) {
+      try {
+        setMyApplications(JSON.parse(saved));
+      } catch {}
+    }
+  }, []);
+
   const fetchJobDetail = async (id) => {
     try {
       const data = await getJobDescription(id);
@@ -42,10 +60,23 @@ export default function JobSeekerDashboard() {
     if (!file || !selectedJob) return;
     setApplying(true);
     try {
-      await uploadCV(selectedJob.id, file);
+      const result = await uploadCV(selectedJob.id, file);
       setUploadSuccess(true);
       setFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
+
+      // Save to local applications list
+      const newApp = {
+        id: result?.application_id || Date.now().toString(),
+        job_title: selectedJob.role_title,
+        company: selectedJob.company_name,
+        applied_at: new Date().toISOString(),
+        status: 'applied',
+      };
+      const updated = [...myApplications, newApp];
+      setMyApplications(updated);
+      localStorage.setItem('myApplications', JSON.stringify(updated));
+
       setTimeout(() => {
         setUploadSuccess(false);
         setSelectedJob(null);
@@ -60,6 +91,26 @@ export default function JobSeekerDashboard() {
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
+    }
+  };
+
+  const handleViewInsights = async (appId) => {
+    if (expandedApp === appId) {
+      setExpandedApp(null);
+      return;
+    }
+    setExpandedApp(appId);
+
+    if (!skillGapReports[appId]) {
+      setLoadingReport(appId);
+      try {
+        const report = await getSkillGapReport(appId);
+        setSkillGapReports(prev => ({ ...prev, [appId]: report }));
+      } catch {
+        setSkillGapReports(prev => ({ ...prev, [appId]: null }));
+      } finally {
+        setLoadingReport(null);
+      }
     }
   };
 
@@ -86,6 +137,78 @@ export default function JobSeekerDashboard() {
           </p>
         </div>
 
+        {/* ── My Applications Section ── */}
+        {myApplications.length > 0 && (
+          <div className="mb-12">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 rounded-xl bg-primary/10">
+                <Briefcase size={20} className="text-primary" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight">My Applications</h2>
+                <p className="text-sm text-muted-foreground">Track your applications and view AI skill insights</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {myApplications.map((app) => (
+                <Card key={app.id} className="overflow-hidden transition-all duration-300 hover:shadow-md">
+                  <CardContent className="p-0">
+                    <div className="flex items-center justify-between p-5">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-blue-500/20 flex items-center justify-center">
+                          <Briefcase size={20} className="text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg">{app.job_title}</h3>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1"><Building size={14} /> {app.company}</span>
+                            <span className="flex items-center gap-1"><Clock size={14} /> {new Date(app.applied_at).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge variant="secondary" className="capitalize px-3 py-1">{app.status}</Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5"
+                          onClick={() => handleViewInsights(app.id)}
+                        >
+                          <Microscope size={14} />
+                          {expandedApp === app.id ? 'Hide' : 'Skill Insights'}
+                          {expandedApp === app.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Expanded Skill Gap Insights */}
+                    {expandedApp === app.id && (
+                      <div className="border-t bg-slate-50/50 p-5">
+                        {loadingReport === app.id ? (
+                          <div className="flex items-center justify-center py-8 gap-3 text-muted-foreground">
+                            <Loader2 size={20} className="animate-spin" />
+                            <span className="font-medium">Loading your skill insights...</span>
+                          </div>
+                        ) : skillGapReports[app.id] ? (
+                          <SkillGapPanel report={skillGapReports[app.id]} variant="seeker" />
+                        ) : (
+                          <div className="text-center py-8">
+                            <TrendingUp size={32} className="mx-auto text-muted-foreground/40 mb-3" />
+                            <p className="font-semibold text-muted-foreground">No skill analysis available yet</p>
+                            <p className="text-sm text-muted-foreground/60 mt-1">Your application is being reviewed. Insights will appear here once the analysis is complete.</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Job Listings ── */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {jobs.length === 0 ? (
             <div className="col-span-full py-20 text-center bg-white rounded-2xl border border-dashed border-muted-foreground/20">

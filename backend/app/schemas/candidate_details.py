@@ -82,3 +82,12 @@ class CandidateUpdate(BaseModel):
     seniority_level: Optional[str] = None
     extra_data: Optional[Dict] = None
     confidence_score: Optional[float] = None
+
+
+class CandidateResponse(CandidateProfile):
+    """Schema for returning a Candidate from the database."""
+    id: __import__('uuid').UUID
+    cv_text: str
+    
+    class Config:
+        from_attributes = True

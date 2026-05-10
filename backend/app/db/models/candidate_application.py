@@ -11,6 +11,7 @@ from app.db.base import Base
 if TYPE_CHECKING:
     from app.db.models.candidate_details import Candidate
     from app.db.models.job_description import JobDescription
+    from app.db.models.skill_gap_report import SkillGapReportRecord
 
 
 class CandidateApplication(Base):
@@ -48,3 +49,4 @@ class CandidateApplication(Base):
     # Relationships
     candidate: Mapped["Candidate"] = relationship("Candidate", back_populates="applications")
     job: Mapped["JobDescription"] = relationship("JobDescription", back_populates="applications")
+    skill_gap_report: Mapped["SkillGapReportRecord"] = relationship("SkillGapReportRecord", back_populates="application", cascade="all, delete", uselist=False, lazy="noload")

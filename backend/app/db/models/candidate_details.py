@@ -56,6 +56,6 @@ class Candidate(Base):
         nullable=False,
     )
 
-    cv_scores: Mapped[List["CVScore"]] = relationship("CVScore", back_populates="candidate")
-    bias_reports: Mapped[list["BiasReportRecord"]] = relationship("BiasReportRecord", back_populates="candidate", cascade="all, delete")
-    applications: Mapped[list["CandidateApplication"]] = relationship("CandidateApplication", back_populates="candidate", cascade="all, delete")
+    cv_scores: Mapped[List["CVScore"]] = relationship("CVScore", back_populates="candidate", lazy="noload")
+    bias_reports: Mapped[list["BiasReportRecord"]] = relationship("BiasReportRecord", back_populates="candidate", cascade="all, delete", lazy="noload")
+    applications: Mapped[list["CandidateApplication"]] = relationship("CandidateApplication", back_populates="candidate", cascade="all, delete", lazy="noload")
