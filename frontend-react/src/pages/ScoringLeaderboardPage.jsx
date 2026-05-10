@@ -83,7 +83,7 @@ export default function ScoringLeaderboardPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-16 text-center">Rank</TableHead>
-                  <TableHead>Candidate ID</TableHead>
+                  <TableHead>Candidate</TableHead>
                   <TableHead>Score</TableHead>
                   <TableHead>Recommendation</TableHead>
                   <TableHead className="text-right">Action</TableHead>
@@ -102,7 +102,10 @@ export default function ScoringLeaderboardPage() {
                       <TableCell className="text-center font-bold">
                         {index === 0 ? <Trophy size={18} className="mx-auto text-yellow-500" /> : `#${index + 1}`}
                       </TableCell>
-                      <TableCell className="font-mono text-xs">{entry.candidate_id}</TableCell>
+                      <TableCell>
+                        <div className="font-semibold">{entry.candidate_name || 'Unknown Candidate'}</div>
+                        <div className="text-xs text-muted-foreground font-mono">{entry.candidate_id.substring(0, 8)}...</div>
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-lg">{entry.score}</span>
@@ -144,8 +147,9 @@ export default function ScoringLeaderboardPage() {
               <ul className="divide-y">
                 {unscoredApps.map(app => (
                   <li key={app.id} className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
-                    <div className="font-mono text-xs text-muted-foreground truncate w-24" title={app.candidate_id}>
-                      {app.candidate_id.substring(0, 8)}...
+                    <div>
+                      <div className="font-medium text-sm">{app.candidate_name || 'New Candidate'}</div>
+                      <div className="text-[10px] text-muted-foreground font-mono">{app.candidate_email || app.candidate_id.substring(0, 8)}</div>
                     </div>
                     <Button 
                       size="sm" 

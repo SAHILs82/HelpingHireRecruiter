@@ -97,6 +97,7 @@ def fetch_scoring_inputs(application_id: str) -> Dict[str, Any]:
             "application_id": str(application.id),
             "candidate_id": str(candidate.id),
             "job_id": str(job.id),
+            "role_title": job.role_title,
             "candidate_data": candidate_data,
             "jd_text": job.jd_text,
             "structured_output": job.structured_output,  # Contains the rubric + weighting
@@ -121,7 +122,12 @@ def prepare_cv_scorer_prompts(scoring_inputs: Dict[str, Any]) -> Tuple[str, str]
     db = SessionLocal()
     try:
         active_prompts = load_active_prompt_map(db, LLM_USE_CASE_CV_SCORER)
-        system_prompt = resolve_full_prompt(active_prompts, "system", FALLBACK_SYSTEM_PROMPT)
+        
+        from app.ai.utils.domain_mapper import map_to_variant_key
+        search_text = f"{scoring_inputs.get('role_title', '')} {scoring_inputs['candidate_data'].get('primary_domain', '')}"
+        variant_key = map_to_variant_key(search_text)
+        
+        system_prompt = resolve_full_prompt(active_prompts, variant_key, FALLBACK_SYSTEM_PROMPT)
     finally:
         db.close()
 

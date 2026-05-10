@@ -101,6 +101,22 @@ async def update_candidate(
     await db.refresh(candidate)
     return {"id": str(candidate.id), "status": "updated"}
 
+@router.get("/candidate/{candidate_id}")
+async def get_candidate(
+    candidate_id: uuid.UUID,
+    db: AsyncSession = Depends(get_session)
+) -> Any:
+    """
+    Get an existing candidate profile.
+    """
+    candidate = await db.get(Candidate, candidate_id)
+    if not candidate:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Candidate not found"
+        )
+    return candidate
+
 
 @router.delete("/{candidate_id}", status_code=status.HTTP_200_OK)
 async def delete_candidate(

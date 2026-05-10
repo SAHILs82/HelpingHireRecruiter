@@ -20,7 +20,11 @@ def parse_jd_to_rubric(jd_text: str, role_title: str = "AI Engineer", level: str
     db = SessionLocal()
     try:
         active_prompts = load_active_prompt_map(db, LLM_USE_CASE_JD_PARSER)
-        system_prompt = resolve_full_prompt(active_prompts, "system", FALLBACK_SYSTEM_PROMPT)
+        
+        from app.ai.utils.domain_mapper import map_to_variant_key
+        variant_key = map_to_variant_key(role_title)
+        
+        system_prompt = resolve_full_prompt(active_prompts, variant_key, FALLBACK_SYSTEM_PROMPT)
     finally:
         db.close()
 
